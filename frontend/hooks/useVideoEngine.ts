@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { KnowledgeBase, Source, SelectedItem } from "../types";
-import { videoApi } from "services/api";
+import { KnowledgeBase, Source, SelectedItem } from "@/types";
+import { videoApi } from "@/services/api";
 
 export function useVideoEngine() {
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
@@ -33,13 +33,20 @@ export function useVideoEngine() {
     fetchData();
   }, [fetchData]);
 
-  // Polling to update status of background processing
+  // Polling only if there's an active background task
   useEffect(() => {
+    const hasActiveTasks = 
+      standaloneSources.some(s => s.status === "progress") ||
+      knowledgeBases.some(kb => kb.sources.some(s => s.status === "progress"));
+
+    if (!hasActiveTasks) return;
+
     const interval = setInterval(() => {
       fetchData();
     }, 5000);
+    
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, standaloneSources, knowledgeBases]);
 
   return {
     knowledgeBases,

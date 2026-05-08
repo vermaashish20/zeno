@@ -6,6 +6,8 @@ from models.schemas import Source, KnowledgeBase
 
 class MongoRepository:
     def __init__(self):
+        self.kb_col = None
+        self.sources_col = None
         try:
             self.client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
             self.db = self.client[DB_NAME]
@@ -13,6 +15,7 @@ class MongoRepository:
             self.sources_col = self.db["sources"]
         except Exception as e:
             print(f"MongoDB connection failed: {e}")
+            raise RuntimeError(f"Could not connect to MongoDB: {e}")
 
     def _serialize(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         if not doc:
@@ -46,6 +49,12 @@ class MongoRepository:
         serialized = self._serialize(doc)
         return KnowledgeBase(**serialized)
 
+    def update_kb_title(self, kb_id: str, new_title: str):
+        self.kb_col.update_one({"_id": ObjectId(kb_id)}, {"$set": {"title": new_title}})
+
+    def update_kb_summary(self, kb_id: str, summary: str):
+        self.kb_col.update_one({"_id": ObjectId(kb_id)}, {"$set": {"summary": summary}})
+
     # Source Methods
     def create_source(self, source: Source) -> str:
         doc = source.dict(exclude={'id'})
@@ -64,8 +73,10 @@ class MongoRepository:
         cursor = self.sources_col.find(query).sort("created_at", -1)
         return [Source(**self._serialize(doc)) for doc in cursor]
 
-    def update_source_status(self, source_id: str, status: str, transcription: str = None):
+    def update_source_status(self, source_id: str, status: str, transcription: str = None, summary: str = None):
         update_data = {"status": status}
         if transcription is not None:
             update_data["transcription"] = transcription
+        if summary is not None:
+            update_data["summary"] = summary
         self.sources_col.update_one({"_id": ObjectId(source_id)}, {"$set": update_data})

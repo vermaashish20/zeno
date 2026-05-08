@@ -2,6 +2,8 @@ import yt_dlp
 import os
 import uuid
 
+COOKIES_FILE = os.path.join(os.path.dirname(__file__), "youtube_cook.txt")
+
 def extract_playlist_info(url: str):
     """
     Checks if a URL is a playlist or single video without downloading.
@@ -10,7 +12,14 @@ def extract_playlist_info(url: str):
     ydl_opts = {
         'extract_flat': True,
         'quiet': True,
+        'remote_components': ['ejs:github'],
+        'jsruntimes': ['deno', 'node'],
     }
+    
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+    
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -30,42 +39,37 @@ def extract_playlist_info(url: str):
         return []
 
 def download_youtube_video(url: str, output_dir: str = "downloads"):
-    """
-    Downloads a YouTube video to the output_dir. 
-    Returns a dict with 'success', 'title', 'filepath', and 'id'.
-    """
     os.makedirs(output_dir, exist_ok=True)
-    
     file_id = str(uuid.uuid4())
+    
     ydl_opts = {
-        'format': 'bestaudio/best',  # Get best audio only
-        'outtmpl': os.path.join(output_dir, f'{file_id}.%(ext)s'), # Use random ID to prevent file path issues
-        'postprocessors': [{         # Extract audio and convert to mp3
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
+        'format': 'bestaudio[ext=m4a]/bestaudio', 
+        'outtmpl': os.path.join(output_dir, f'{file_id}.%(ext)s'),
+        'remote_components': ['ejs:github'],
+        'jsruntimes': ['deno', 'node'],
     }
+
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+
+
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Downloading: {url}")
-            
-            # extract_info performs the download and returns metadata
             info = ydl.extract_info(url, download=True)
             
-            print("Download complete!")
+            # Get the actual extension downloaded (e.g., m4a or webm)
+            ext = info.get('ext', 'm4a') 
+            filepath = os.path.join(output_dir, f"{file_id}.{ext}")
             
+            print(f"Download complete: {filepath}")
             return {
                 "success": True,
                 "title": info.get('title', 'Unknown Title'),
                 "id": info.get('id', 'Unknown ID'),
-                # Since we used file_id in outtmpl, it is strictly this random string
-                "filepath": os.path.join(output_dir, f"{file_id}.mp3")
+                "filepath": filepath
             }
     except Exception as e:
         print(f"An error occurred: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}

@@ -9,6 +9,7 @@ Zeno is a full-stack, AI-powered knowledge base management system. It allows use
 - **State-of-the-Art Transcription:** Powered by OpenAI's `faster-whisper` for blazing-fast, highly accurate speech-to-text.
 - **Knowledge Base Organization:** Group related videos into semantic folders (Knowledge Bases) for cross-referencing.
 - **Contextual RAG Chat:** Chat with a single video transcript, or query the entire Knowledge Base for comprehensive insights.
+- **Agentic RAG Workflow:** Powered by `LangGraph`, the system uses a stateful agent to analyze queries, decide on retrieval strategies, and ensure grounded responses.
 - **Strictly Typed Architecture:** Built on a highly scalable Controller-Service-Repository pattern with strict Pydantic schemas.
 
 ## 🛠️ Tech Stack
@@ -23,7 +24,10 @@ Zeno is a full-stack, AI-powered knowledge base management system. It allows use
 **Backend (`/backend`)**
 - Framework: FastAPI
 - Database: MongoDB (PyMongo)
-- Media Processing: `yt-dlp` and `faster-whisper`
+- Media Processing: `yt-dlp` (configured with Deno/Node for JS challenges) and `faster-whisper`
+- LLM Engine: Multi-provider support (Ollama, OpenAI, Gemini)
+- Orchestration: LangGraph (for Agentic RAG)
+- Execution Model: Fully Asynchronous (`asyncio` + `httpx`)
 - Environment Management: `uv`
 
 ## 📁 Project Structure
@@ -36,7 +40,7 @@ zeno/
 │   ├── controllers/          # FastAPI Route handlers
 │   ├── models/               # Strict Pydantic Data Models
 │   ├── repositories/         # MongoDB Database Interactions
-│   └── services/             # Core Business Logic (YT-dlp, Whisper, Chat)
+│   └── services/             # Core Business Logic (Agentic RAG, Whisper, YT-dlp)
 │
 └── frontend/                 # Next.js Application
     ├── app/
@@ -47,11 +51,73 @@ zeno/
     └── package.json
 ```
 
+## 🧠 Agentic RAG Architecture
+
+Zeno implements a production-grade Agentic RAG pipeline using **LangGraph**. This ensures high accuracy, low latency, and efficient token usage.
+
+```text
++-----------------------------------------------------------------------+
+|                       Fetch Workspace Context                         |
+|           (Identifies workspace title, summaries, and index)          |
++--------------------------+--------------------------------------------+
+                           |
+                           v
++-----------------------------------------------------------------------+
+|                         Decision Router                               |
+|           (Analyzes query: Does it need knowledge base?)              |
++--------+------------------------------+-------------------------------+
+         |                              |
+         | [Needs Context]              | [General Chat]
+         v                              v
++-----------------------+      +-----------------------+
+|  ChromaDB Retriever   |      |   Direct Generator    |
+| (Fetches transcripts) |      |   (General knowledge) |
++--------+--------------+      +----------+------------+
+         |                                |
+         v                                |
++-----------------------+                 |
+|    Document Grader    |                 |
+| (Checks relevance)    |                 |
++--------+-------+------+                 |
+         |       |                        |
+ [Relevant]      | [Irrelevant]           |
+         |       v                        |
+         |   +-----------------------+    |
+         |   |    Query Rewriter     |    |
+         |   | (Refines search query)|    |
+         |   +-----------+-----------+    |
+         |               |                |
+         +---------------+----------------+
+                         |
+                         v
+             +-----------------------+
+             |    Response Generator |
+             |  (Grounded in context)|
+             +-----------+-----------+
+                         |
+                         v
+             +-----------------------+
+             |  Hallucination Check  |
+             | (Final verification)  |
+             +-----------+-----------+
+                         |
+                         v
+                  [Final Response]
+```
+
+### Key Components:
+- **Asynchronous Execution:** Entire pipeline built on `httpx` and `async/await` for non-blocking, low-latency processing of LLM requests.
+- **Workspace-Aware Intelligence:** Every query starts by fetching the high-level workspace index, providing the agent with "Big Picture" context of all transcripts.
+- **Stateful Management:** Uses LangGraph's `MemorySaver` to persist conversation state across interactions.
+- **Self-Correction & Routing:** Intelligent routing decides between direct answers and RAG retrieval, with a grading loop to ensure context relevance.
+
 ## 💻 Getting Started
 
 ### Prerequisites
 - Python 3.12+ and [uv](https://docs.astral.sh/uv/)
 - Node.js / [Bun](https://bun.sh/)
+- [Deno](https://deno.com/) (Highly recommended for `yt-dlp` to bypass JS-based bot detection)
+- [Ollama](https://ollama.com/) (Running `gemma2:2b` or similar for local RAG)
 - FFmpeg (Required for audio processing)
 - MongoDB instance running locally (default: `mongodb://localhost:27017/`)
 

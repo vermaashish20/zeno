@@ -17,10 +17,12 @@ class Source(MongoBaseModel):
     status: str = "idle"
     type: str = "video"
     transcription: str = ""
+    summary: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class KnowledgeBase(MongoBaseModel):
     title: str
+    summary: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
     sources: Optional[List[Source]] = []
 
@@ -29,11 +31,25 @@ class ImportRequest(BaseModel):
     url: str
     target: str # "standalone", "new_kb", or a kb_id string
     new_kb_name: Optional[str] = None
+    selected_urls: Optional[List[str]] = None
+
+class PreviewRequest(BaseModel):
+    url: str
+
+class VideoPreview(BaseModel):
+    title: str
+    url: str
+
+class PreviewResponse(BaseModel):
+    videos: List[VideoPreview]
 
 class ChatRequest(BaseModel):
     query: str
     target_type: str # "source" or "kb"
     target_id: str
+
+class CreateKBRequest(BaseModel):
+    title: str
 
 # Response Models
 class ChatResponse(BaseModel):

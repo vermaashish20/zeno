@@ -1,30 +1,39 @@
+import json
 from fastapi import HTTPException
-from repositories.mongo_repo import MongoRepository
 from models.schemas import ChatRequest, ChatResponse
+from repositories.mongo_repo import MongoRepository
+from services.llm_service import LLMService
+from services.agent_service import AgentService
 
 class ChatService:
-    def __init__(self, repo: MongoRepository):
+    def __init__(self, repo: MongoRepository, llm_service: LLMService, agent_service: AgentService):
         self.repo = repo
+        self.llm_service = llm_service
+        self.agent_service = agent_service
 
-    def handle_chat(self, req: ChatRequest) -> ChatResponse:
-        context_text = ""
-        
+    async def handle_chat(self, req: ChatRequest):
         try:
-            if req.target_type == "source":
-                source = self.repo.get_source(req.target_id)
-                if not source:
-                    raise HTTPException(status_code=404, detail="Source not found")
-                context_text = source.transcription or ""
-            elif req.target_type == "kb":
-                sources = self.repo.get_sources_by_kb(req.target_id)
-                for s in sources:
-                    context_text += f"\n\n--- Video: {s.title} ---\n"
-                    context_text += (s.transcription or "")[:2000]
-            else:
-                raise HTTPException(status_code=400, detail="Invalid target_type. Must be 'source' or 'kb'.")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            # Run the agentic workflow
+            # Using a dummy thread_id for now, could be passed from client for real memory
+            thread_id = req.user_id if hasattr(req, 'user_id') else "default_user"
             
-        return ChatResponse(
-            reply=f"Based on the Knowledge Base, here is a mock response to: '{req.query}'. Context length parsed: {len(context_text)} characters."
-        )
+            final_state = await self.agent_service.run(
+                query=req.query,
+                target_type=req.target_type,
+                target_id=req.target_id,
+                thread_id=thread_id
+            )
+            
+            prompt = final_state.get("answer_prompt")
+            if not prompt:
+                print(f"DEBUG: Agent failed to generate prompt. Final state: {final_state}")
+                yield "Error: Agent failed to generate a response prompt."
+                return
+
+            # Stream the response back to the user
+            response_gen = await self.llm_service.generate_response(prompt, stream=True)
+            async for chunk in response_gen:
+                yield chunk
+            
+        except Exception as e:
+            yield f"Agent Error: {str(e)}"

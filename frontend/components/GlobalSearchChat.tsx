@@ -21,14 +21,7 @@ export function GlobalSearchChat() {
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-blue-500/30 rounded-3xl blur opacity-25 group-focus-within:opacity-100 transition duration-1000 group-hover:duration-200"></div>
         <div className="relative bg-background/80 backdrop-blur-md border border-black/5 rounded-3xl shadow-xl overflow-hidden flex flex-col transition-all">
-          <div className="flex items-center px-4 py-2 border-b border-black/5 bg-black/[0.02]">
-            <div className="flex items-center text-xs text-muted-foreground">
-              <span className="flex items-center gap-1 font-medium">
-                <Sparkles size={12} className="text-primary" />
-                AI Powered Chat
-              </span>
-            </div>
-          </div>
+          
 
           <div className="flex items-center p-2 relative">
             <div className="pl-4 pr-2 text-muted-foreground">

@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useVideoEngine } from "./controllers/useVideoEngine";
-import { videoApi } from "./services/api";
-import { KnowledgeBase, Source } from "./types";
+import { useVideoEngine } from "@/hooks/useVideoEngine";
+import { videoApi } from "@/services/api";
+import { KnowledgeBase, Source } from "@/types";
 
 export default function ClientVideoAnswerEngine() {
   const {
@@ -76,18 +76,39 @@ export default function ClientVideoAnswerEngine() {
     setInputText("");
     setChatProcessing(true);
     
+    // Add an empty AI message placeholder
+    setChatMessages((prev) => [...prev, { sender: "ai", text: "" }]);
+
+    let fullResponse = "";
     try {
-      const res = await videoApi.chat(query, selectedItem.type, selectedItem.id);
-      setChatMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: res.reply },
-      ]);
+      await videoApi.chatStream(
+        query, 
+        selectedItem.type, 
+        selectedItem.id, 
+        (chunk) => {
+          fullResponse += chunk;
+          setChatMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMsg = newMessages[newMessages.length - 1];
+            if (lastMsg && lastMsg.sender === "ai") {
+              lastMsg.text = fullResponse;
+            }
+            return newMessages;
+          });
+        }
+      );
     } catch (err) {
       console.error(err);
-      setChatMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: "Error connecting to the chat engine." },
-      ]);
+      setChatMessages((prev) => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg && lastMsg.sender === "ai" && !lastMsg.text) {
+          lastMsg.text = "Error connecting to the chat engine.";
+        } else if (lastMsg && lastMsg.sender === "ai") {
+           lastMsg.text += "\n\n[Connection lost]";
+        }
+        return newMessages;
+      });
     } finally {
       setChatProcessing(false);
     }
