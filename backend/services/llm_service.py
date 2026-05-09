@@ -1,9 +1,9 @@
 import httpx
 import json
 from config import (
-    LLM_PROVIDER, OLLAMA_BASE_URL, OLLAMA_MODEL,
     OPENAI_API_KEY, OPENAI_MODEL,
-    GEMINI_API_KEY, GEMINI_MODEL
+    GEMINI_API_KEY, GEMINI_MODEL,
+    NVIDIA_API_KEY, NVIDIA_MODEL, NVIDIA_BASE_URL, LLM_PROVIDER
 )
 
 class LLMService:
@@ -23,6 +23,8 @@ class LLMService:
             return await self._call_openai_sync(prompt)
         elif LLM_PROVIDER == "gemini":
             return await self._call_gemini_sync(prompt)
+        elif LLM_PROVIDER == "nvidia":
+            return await self._call_nvidia_sync(prompt)
         else:
             return "LLM Provider not configured correctly."
 
@@ -35,6 +37,9 @@ class LLMService:
                 yield chunk
         elif LLM_PROVIDER == "gemini":
             async for chunk in self._call_gemini_stream(prompt):
+                yield chunk
+        elif LLM_PROVIDER == "nvidia":
+            async for chunk in self._call_nvidia_stream(prompt):
                 yield chunk
         else:
             yield "LLM Provider not configured correctly."
@@ -167,3 +172,64 @@ class LLMService:
                                     yield text
         except Exception as e:
             yield f"Gemini Error: {str(e)}"
+
+    async def _call_nvidia_sync(self, prompt: str):
+        if not NVIDIA_API_KEY:
+            return "Error: NVIDIA API Key not configured."
+        try:
+            headers = {
+                "Authorization": f"Bearer {NVIDIA_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": NVIDIA_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.6,
+                "top_p": 0.7,
+                "max_tokens": 4096,
+                "stream": False
+            }
+            async with httpx.AsyncClient() as client:
+                url = f"{NVIDIA_BASE_URL.rstrip('/')}/chat/completions"
+                res = await client.post(url, headers=headers, json=payload, timeout=self.timeout)
+                res.raise_for_status()
+                return res.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        except Exception as e:
+            return f"NVIDIA Error: {str(e)}"
+
+    async def _call_nvidia_stream(self, prompt: str):
+        if not NVIDIA_API_KEY:
+            yield "Error: NVIDIA API Key not configured."
+            return
+        try:
+            headers = {
+                "Authorization": f"Bearer {NVIDIA_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": NVIDIA_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.6,
+                "top_p": 0.7,
+                "max_tokens": 4096,
+                "stream": True
+            }
+            async with httpx.AsyncClient() as client:
+                url = f"{NVIDIA_BASE_URL.rstrip('/')}/chat/completions"
+                async with client.stream("POST", url, headers=headers, json=payload, timeout=self.timeout) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if line:
+                            if line.startswith("data: "):
+                                data_content = line[6:].strip()
+                                if data_content == "[DONE]":
+                                    break
+                                try:
+                                    chunk = json.loads(data_content)
+                                    text = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                    if text:
+                                        yield text
+                                except json.JSONDecodeError:
+                                    continue
+        except Exception as e:
+            yield f"NVIDIA Error: {str(e)}"
