@@ -10,35 +10,29 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between py-2 px-6 md:px-8 bg-transparent sticky top-0 z-50">
+      <nav className="fixed top-2 left-0 right-0 z-50 flex items-center justify-between py-2 px-6 mx-4 md:mx-12 bg-white/40 backdrop-blur-md border border-slate-900 rounded-full shadow-sm max-w-7xl lg:mx-auto">
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-primary/20 p-2 rounded-xl text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-              <Zap size={24} className="fill-current" />
-            </div>
-            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+          <Link href="/" className="group">
+            <span className="font-bold text-2xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
               Zeno
             </span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsImportOpen(true)}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-full transition-all"
+            className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
           >
-            <Import size={16} />
+            <Import size={18} />
             <span>Import</span>
           </button>
           <button 
             onClick={() => setIsNewKbOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.3)] transition-all"
+            className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all active:translate-y-0"
           >
-            <Plus size={16} />
-            <span className="hidden sm:inline">New Workspace</span>
-          </button>
-          <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-black/5 rounded-full transition-all">
-            <Settings size={20} />
+            <Plus size={18} />
+            <span>New Workspace</span>
           </button>
         </div>
       </nav>

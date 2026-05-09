@@ -1,14 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@700;800&family=Space+Grotesk:wght@700&family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap');
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
-  --foreground: #09090b;
-  --primary: #2563eb; /* Nice vibrant blue for light theme */
+  --foreground: #0f172a;
+  --primary: #6366f1; /* Indigo-ish */
   --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
+  --secondary: #f8fafc;
+  --secondary-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f5f3ff;
+  --accent-foreground: #4f46e5;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #6366f1;
+  
+  --gradient-1: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --gradient-2: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+  --gradient-3: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
 }
 
 @theme inline {
@@ -20,22 +30,73 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Bricolage Grotesque', 'Plus Jakarta Sans', sans-serif;
+  --font-refined: 'Bricolage Grotesque', 'Inter', sans-serif;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
 }
 
-/* Custom Scrollbar for sleek UI */
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
+  
+  .glass-dark {
+    @apply bg-black/5 backdrop-blur-md border border-black/5;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600;
+  }
+
+  .bg-vibrant-1 { background: var(--gradient-1); }
+  .bg-vibrant-2 { background: var(--gradient-2); }
+  .bg-vibrant-3 { background: var(--gradient-3); }
+  
+  .mesh-gradient {
+    background-color: #ffffff;
+    background-image: 
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3Y%3Cfilter id='noiseFilter'%3Y%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+      radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.35) 0px, transparent 50%),
+      radial-gradient(at 85% 85%, rgba(217, 70, 239, 0.35) 0px, transparent 50%),
+      radial-gradient(at 50% 0%, rgba(249, 115, 22, 0.3) 0px, transparent 50%),
+      radial-gradient(at 95% 20%, rgba(132, 204, 22, 0.3) 0px, transparent 50%),
+      radial-gradient(at 0% 90%, rgba(239, 68, 68, 0.25) 0px, transparent 50%);
+    background-blend-mode: soft-light;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -43,10 +104,5 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground);
+  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
 }

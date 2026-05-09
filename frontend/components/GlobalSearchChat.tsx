@@ -6,45 +6,60 @@ import { cn } from "@/lib/utils";
 
 export function GlobalSearchChat() {
   const [query, setQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="w-full max-w-3xl mx-auto mt-12 mb-16 px-4">
-      <div className="flex flex-col items-center mb-8">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-4 text-center">
-          What would you like to know?
-        </h1>
-        <p className="text-muted-foreground text-center max-w-xl">
-          Chat directly with your entire knowledge base.
-        </p>
-      </div>
-
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-blue-500/30 rounded-3xl blur opacity-25 group-focus-within:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-        <div className="relative bg-background/80 backdrop-blur-md border border-black/5 rounded-3xl shadow-xl overflow-hidden flex flex-col transition-all">
+    <div className="w-full max-w-2xl mx-auto px-4">
+      <div className={cn(
+        "relative group transition-all duration-500",
+        isFocused ? "scale-[1.02]" : "scale-100"
+      )}>
+        {/* Glow Effect */}
+        <div className={cn(
+          "absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-xl transition-opacity duration-500",
+          isFocused ? "opacity-20" : "opacity-0 group-hover:opacity-10"
+        )}></div>
+        
+        <div className={cn(
+          "relative bg-white border rounded-full shadow-2xl shadow-indigo-500/5 overflow-hidden flex items-center transition-all duration-300",
+          isFocused ? "border-indigo-500/30 ring-4 ring-indigo-500/5" : "border-slate-200"
+        )}>
+          <div className="pl-6 pr-3 text-slate-400">
+            <MessageSquare size={18} className={cn(isFocused && "text-indigo-500 transition-colors")} />
+          </div>
           
-
-          <div className="flex items-center p-2 relative">
-            <div className="pl-4 pr-2 text-muted-foreground">
-              <MessageSquare size={20} />
-            </div>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask anything across your workspaces..."
-              className="w-full bg-transparent border-none outline-none px-2 py-4 text-lg placeholder:text-muted-foreground/60 focus:ring-0"
-            />
+          <input
+            type="text"
+            value={query}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ask anything across your workspaces..."
+            className="w-full bg-transparent border-none outline-none py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:ring-0"
+          />
+          
+          <div className="pr-3">
             <button 
               className={cn(
-                "p-3 rounded-2xl flex items-center justify-center transition-all mr-2",
+                "p-3 rounded-2xl flex items-center justify-center transition-all duration-300",
                 query.length > 0 
-                  ? "bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 hover:scale-105" 
-                  : "bg-secondary text-muted-foreground cursor-not-allowed"
+                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 active:scale-95" 
+                  : "bg-slate-100 text-slate-300 cursor-not-allowed"
               )}
             >
-              <ArrowRight size={20} />
+              <ArrowRight size={20} strokeWidth={2.5} />
             </button>
           </div>
+        </div>
+
+        {/* Quick Tips */}
+        <div className={cn(
+          "flex items-center justify-center gap-6 mt-6 transition-all duration-500",
+          isFocused ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
+        )}>
+          <span className="text-xs text-slate-400 font-medium">Try asking:</span>
+          <button className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors">"Summarize latest transcript"</button>
+          <button className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors">"Find notes on Project X"</button>
         </div>
       </div>
     </div>
